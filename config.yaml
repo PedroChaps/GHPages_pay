@@ -1,0 +1,176 @@
+# =============================================================================
+#  pay.chaparro.pt — single source of truth
+# =============================================================================
+#  Edit this file, commit to `main`, and the live site updates automatically
+#  (it is fetched at runtime — no rebuild needed).
+#
+#  HOW IT WORKS
+#  ------------
+#  - `ui`         : the page's own text. Every value is { pt, uk } (or a plain
+#                   string to use the same text in both languages).
+#  - `providers`  : one block per bank/provider. Each becomes a card.
+#      id      : unique slug (any short string).
+#      name    : shown as the card title.
+#      image   : local logo under public/providers/ (root-relative path).
+#      regions : which tabs show it — [pt], [uk], or [pt, uk] for both.
+#      accent  : (optional) hex colour tinting the card header.
+#      currencies : (optional) currencies it can receive (eur/gbp), shown as
+#                   badges on the card, e.g. [eur, gbp] or [gbp].
+#      fields  : a list of rows. Each field is rendered generically:
+#          label      : row label — string or { pt, uk }.
+#          value      : the text shown (and copied / linked).
+#          copy: true : adds a one-click copy button.
+#          format: iban : value is shown grouped in blocks of four but copied
+#                       with all spaces stripped (some banking apps reject
+#                       spaced IBANs). You can write the value with or without
+#                       spaces — display/copy are normalised either way.
+#          format: sortcode : shown as XX-XX-XX, copied as digits only. Type it
+#                       without dashes in the config.
+#          type: link : renders `value` as a button (a payment link).
+#          cta        : (link only) button text — string or { pt, uk }.
+#          fillAmount : (link only) prefill ?currency=..&amount=.. into the link
+#                       from the URL's ?a= amount (Revolut format).
+#          note       : (optional) small helper line — string or { pt, uk }.
+#
+#  URL PARAMETERS  (build these easily at  https://pay.chaparro.pt/gen )
+#  --------------
+#      a = amount to request (e.g. 50 or 12.50)
+#      c = currency the amount is owed in    (eur | gbp, default gbp)
+#      d = default currency to also show it in (eur | gbp, default gbp)
+#      r = open on a specific tab            (pt | uk)
+#  Example:  https://pay.chaparro.pt/?a=50&c=eur
+#  The amount shows as a headline in `c`; when `d` differs, the same amount is
+#  also shown converted into `d` at today's live EUR/GBP rate, alongside a small
+#  rate box. The Revolut link is also pre-filled with the amount + currency.
+# =============================================================================
+
+ui:
+  title:
+    pt: Pagar ao Pedro Chaps
+    uk: Pay Pedro Chaps
+  subtitle:
+    pt: Escolhe o método que te for mais conveniente! 😁
+    uk: Pick whichever method is most convenient for you! 😁
+  amountDue:
+    pt: Valor a pagar
+    uk: Amount due
+  copy:
+    pt: Copiar
+    uk: Copy
+  copied:
+    pt: Copiado!
+    uk: Copied!
+  footer:
+    pt: Obrigado! 😊
+    uk: Thanks! 😊
+  rateLabel:
+    pt: Câmbio de hoje
+    uk: Today's rate
+  openSource:
+    pt: Código aberto no GitHub
+    uk: Open source on GitHub
+
+# Last-resort EUR/GBP rate, used ONLY if every live source is unreachable
+# (frankfurter.dev → exchangerate-api.com → currency-api). Keep it roughly
+# current; live rates override it whenever available.
+fx:
+  gbp_eur: 1.16   # EUR per 1 GBP
+
+providers:
+  # --- Revolut — available in both regions ------------------------------------
+  - id: revolut
+    name: Revolut
+    image: /providers/revolut.svg
+    regions: [pt, uk]
+    currencies: [eur, gbp]
+    accent: "#6d5cff"
+    fields:
+      - label: Revtag
+        value: "@pedrochaps"          # TODO: your real Revtag, e.g. @pedroxyz
+        copy: true
+      - label:
+          pt: Link de pagamento
+          uk: Pay link
+        type: link
+        value: "https://revolut.me/pedrochaps"   # TODO: your revolut.me link
+        cta:
+          pt: Atalho Direto Revolut
+          uk: Direct Revolut Shortcut
+        fillAmount: true          # prefills ?currency=..&amount=.. from the URL
+
+  # --- MB WAY — Portugal only -------------------------------------------------
+  - id: mbway
+    name: MB WAY
+    image: /providers/mbway.svg
+    regions: [pt]
+    currencies: [eur]
+    accent: "#e2001a"
+    fields:
+      - label:
+          pt: Número
+          uk: Number
+        value: "+351 934 *** 898"
+        note:
+          pt: Se já tens o meu contacto, vais reconhecê-lo.
+          uk: If you already have my number, you'll recognise it.
+
+  # --- Santander (Portugal) IBAN — Portugal only ------------------------------
+  - id: santander
+    name: Santander (Transferência Bancária)
+    image: /providers/santander.png
+    regions: [pt]
+    currencies: [eur]
+    accent: "#ec0000"
+    fields:
+      - label: IBAN
+        value: "PT50001800035272782302049"   # TODO: your real IBAN (spaces optional)
+        format: iban                          # shown grouped in 4s, copied without spaces
+        copy: true
+      - label: BIC
+        value: TOTAPTPL
+        copy: true
+      - label:
+          pt: Titular
+          uk: Account holder
+        value: Pedro Chaparro
+        copy: true
+
+  # --- Barclays (bank transfer) — UK only -------------------------------------
+  - id: barclays
+    name: Barclays (Bank Transfer)
+    image: /providers/barclays.svg
+    regions: [uk]
+    currencies: [gbp]
+    accent: "#00aeef"
+    fields:
+      - label: Sort code
+        value: "202598"        # typed without dashes; shown 20-25-98, copied 202598
+        format: sortcode
+        copy: true
+      - label: Account number
+        value: "40372617"
+        copy: true
+      - label: IBAN
+        value: "GB40BUKB20259840372617"
+        format: iban
+        copy: true
+      - label: SWIFT / BIC
+        value: BUKBGB22
+        copy: true
+      - label:
+          pt: Titular
+          uk: Account holder
+        value: Pedro Chaparro
+        copy: true
+
+# =============================================================================
+#  TO ADD A UK BANK later, copy a block, set regions: [uk], and add fields:
+#
+#  - id: monzo
+#    name: Monzo
+#    image: /providers/monzo.png
+#    regions: [uk]
+#    fields:
+#      - { label: "Sort code", value: "00-00-00", copy: true }
+#      - { label: "Account number", value: "00000000", copy: true }
+# =============================================================================

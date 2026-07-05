@@ -41,7 +41,11 @@ function cleanAmount(raw: string | null): string | null {
  */
 export function parseParams(search: string): UrlParams {
   const q = new URLSearchParams(search)
-  const get = (short: string, long: string) => q.get(short) ?? q.get(long)
+  // Short key wins, but an empty value (e.g. "?a=") falls through to the long key.
+  const get = (short: string, long: string) => {
+    const s = q.get(short)
+    return s !== null && s !== '' ? s : q.get(long)
+  }
   const rRaw = (get('r', 'region') ?? '').toLowerCase()
   const region: Region | null = rRaw === 'pt' ? 'pt' : rRaw === 'uk' ? 'uk' : null
   return {

@@ -1,24 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PARAMS } from './paramsDoc'
+import { buildGenUrl, type Mode } from './genUrl'
 import CopyButton from './components/CopyButton'
 import HealthCheck from './components/HealthCheck'
-
-type Mode = 'short' | 'long'
 
 /** The main app lives at the site root; generated links point there. */
 function appBase(): string {
   return `${window.location.origin}/`
-}
-
-function buildUrl(values: Record<string, string>, mode: Mode): string {
-  const q = new URLSearchParams()
-  // Preserve documented order; omit empty (= default) values.
-  for (const p of PARAMS) {
-    const raw = values[p.key]?.trim()
-    if (raw) q.set(mode === 'long' ? p.long : p.key, raw)
-  }
-  const qs = q.toString()
-  return appBase() + (qs ? `?${qs}` : '')
 }
 
 export default function Generator() {
@@ -33,7 +21,7 @@ export default function Generator() {
   const set = (key: string, value: string) =>
     setValues((v) => ({ ...v, [key]: value }))
 
-  const url = useMemo(() => buildUrl(values, mode), [values, mode])
+  const url = useMemo(() => buildGenUrl(values, mode, appBase()), [values, mode])
 
   // Debounce the live preview so it doesn't reload on every keystroke.
   const [previewUrl, setPreviewUrl] = useState(url)

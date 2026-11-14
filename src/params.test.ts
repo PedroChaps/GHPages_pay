@@ -97,6 +97,35 @@ describe('buildLink — Revolut amount prefill (minor units)', () => {
   it('handles amount 0', () => {
     expect(buildLink(base, true, '0', 'eur')).toBe(`${base}?currency=EUR&amount=0`)
   })
+  it("'revolut' is the same as true", () => {
+    expect(buildLink(base, 'revolut', '50', 'gbp')).toBe(`${base}?currency=GBP&amount=5000`)
+  })
+})
+
+describe('buildLink — Monzo amount prefill (path segment, pounds)', () => {
+  const base = 'https://monzo.me/pedrochaparro'
+  it('appends the amount in pounds as a path segment', () => {
+    expect(buildLink(base, 'monzo', '50', 'gbp')).toBe(`${base}/50.00`)
+  })
+  it('always writes two decimals', () => {
+    expect(buildLink(base, 'monzo', '12.5', 'gbp')).toBe(`${base}/12.50`)
+    expect(buildLink(base, 'monzo', '12.35', 'gbp')).toBe(`${base}/12.35`)
+  })
+  it('does not double up a trailing slash on the base', () => {
+    expect(buildLink(`${base}/`, 'monzo', '50', 'gbp')).toBe(`${base}/50.00`)
+  })
+  it('leaves the link bare when the amount is owed in EUR (monzo.me is GBP-only)', () => {
+    expect(buildLink(base, 'monzo', '50', 'eur')).toBe(base)
+  })
+  it('returns base unchanged when amount is null', () => {
+    expect(buildLink(base, 'monzo', null, 'gbp')).toBe(base)
+  })
+  it('handles amount 0', () => {
+    expect(buildLink(base, 'monzo', '0', 'gbp')).toBe(`${base}/0.00`)
+  })
+  it('returns base unchanged for an invalid URL', () => {
+    expect(buildLink('not a url', 'monzo', '50', 'gbp')).toBe('not a url')
+  })
 })
 
 describe('formatAmount / formatMoney', () => {

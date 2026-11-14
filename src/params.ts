@@ -1,4 +1,4 @@
-import type { Region } from './types'
+import type { LinkFill, Region } from './types'
 
 export type Currency = 'eur' | 'gbp'
 
@@ -66,13 +66,15 @@ export function formatAmount(amount: string, currency: Currency): string {
 const REVOLUT_AMOUNT_IN_MINOR_UNITS = true
 
 /**
- * Build a payment link, optionally prefilling amount + currency in Revolut's
- * query format: https://revolut.me/<tag>?currency=EUR&amount=5000
+ * Build a payment link, optionally prefilling the amount in the format the
+ * provider expects:
+ *   revolut (or `true`) — https://revolut.me/<tag>?currency=EUR&amount=5000
+ *   monzo               — https://monzo.me/<name>/50.00
  * Returns the base link unchanged when there's no amount / fill isn't requested.
  */
 export function buildLink(
   base: string,
-  fillAmount: boolean | undefined,
+  fillAmount: LinkFill | undefined,
   amount: string | null,
   currency: Currency,
 ): string {
@@ -80,6 +82,14 @@ export function buildLink(
   try {
     const url = new URL(base)
     const n = Number(amount)
+    if (fillAmount === 'monzo') {
+      // monzo.me takes the amount as a path segment in POUNDS, and carries no
+      // currency of its own — it always settles in GBP. So an amount owed in
+      // another currency is left off rather than silently relabelled as GBP.
+      if (currency !== 'gbp') return base
+      url.pathname = `${url.pathname.replace(/\/+$/, '')}/${n.toFixed(2)}`
+      return url.toString()
+    }
     const value = REVOLUT_AMOUNT_IN_MINOR_UNITS ? Math.round(n * 100) : n
     url.searchParams.set('currency', currency.toUpperCase())
     url.searchParams.set('amount', String(value))

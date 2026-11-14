@@ -11,6 +11,12 @@ export type Region = 'pt' | 'uk'
 /** A string that is either language-agnostic or split per region. */
 export type LocalizedText = string | Partial<Record<Region, string>>
 
+/**
+ * Which provider's link format an amount is prefilled in. `true` is the
+ * original spelling of `revolut`, kept so older configs keep working.
+ */
+export type LinkFill = boolean | 'revolut' | 'monzo'
+
 export interface Field {
   /** Row label, e.g. "IBAN" or { pt: "Número", uk: "Number" }. */
   label: LocalizedText
@@ -29,10 +35,12 @@ export interface Field {
   /** For links: the button label. Falls back to `label` if omitted. */
   cta?: LocalizedText
   /**
-   * For links: prefill the amount into the URL as `?currency=..&amount=..`
-   * (Revolut format) when the page has an `?a=` amount. Uses the owed currency.
+   * For links: prefill the page's `?a=` amount into the URL, in the format the
+   * provider expects — `revolut` (or `true`) adds `?currency=..&amount=..` in
+   * minor units; `monzo` appends the amount in pounds as a path segment and is
+   * skipped unless the amount is owed in GBP (monzo.me is GBP-only).
    */
-  fillAmount?: boolean
+  fillAmount?: LinkFill
   /** Optional muted helper line under the field. */
   note?: LocalizedText
 }

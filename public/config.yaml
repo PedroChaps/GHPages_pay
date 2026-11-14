@@ -28,8 +28,12 @@
 #                       without dashes in the config.
 #          type: link : renders `value` as a button (a payment link).
 #          cta        : (link only) button text — string or { pt, uk }.
-#          fillAmount : (link only) prefill ?currency=..&amount=.. into the link
-#                       from the URL's ?a= amount (Revolut format).
+#          fillAmount : (link only) prefill the URL's ?a= amount into the link,
+#                       in the format that provider expects:
+#                         revolut (or true) — ?currency=GBP&amount=5000
+#                         monzo             — /50.00 appended to the path;
+#                                             skipped unless the amount is in
+#                                             GBP, since monzo.me is GBP-only.
 #          note       : (optional) small helper line — string or { pt, uk }.
 #
 #  URL PARAMETERS  (build these easily at  https://pay.chaparro.pt/gen )
@@ -163,14 +167,44 @@ providers:
         value: Pedro Chaparro
         copy: true
 
+  # --- Monzo — UK only --------------------------------------------------------
+  - id: monzo
+    name: Monzo
+    image: /providers/monzo.png
+    regions: [uk]
+    currencies: [gbp]
+    accent: "#ff4f40"
+    fields:
+      - label:
+          pt: Link de pagamento
+          uk: Pay link
+        type: link
+        value: "https://monzo.me/pedrochaparro"
+        cta:
+          pt: Atalho Direto Monzo
+          uk: Direct Monzo Shortcut
+        fillAmount: monzo     # appends /50.00 to the link (GBP amounts only)
+      - label: Sort code
+        value: "040006"        # typed without dashes; shown 04-00-06, copied 040006
+        format: sortcode
+        copy: true
+      - label: Account number
+        value: "55329746"
+        copy: true
+      - label:
+          pt: Titular
+          uk: Account holder
+        value: Pedro Chaparro
+        copy: true
+
 # =============================================================================
-#  TO ADD A UK BANK later, copy a block, set regions: [uk], and add fields:
+#  TO ADD ANOTHER BANK later, copy a block, set its `regions:`, and add fields:
 #
-#  - id: monzo
-#    name: Monzo
-#    image: /providers/monzo.png
+#  - id: starling
+#    name: Starling
+#    image: /providers/starling.png
 #    regions: [uk]
 #    fields:
-#      - { label: "Sort code", value: "00-00-00", copy: true }
+#      - { label: "Sort code", value: "000000", format: sortcode, copy: true }
 #      - { label: "Account number", value: "00000000", copy: true }
 # =============================================================================
